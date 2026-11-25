@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0033FF">
+<title>clean-plate: one dancer out of a moving shot</title>
+<meta name="description" content="A case study: a tool that removes one person from a moving shot and keeps the people around them. SAM 3.1 masks the person, and MiniMax H3 with the ReFrameVideo LoRA rebuilds the background where they were.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the case study</a>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#top">Geofrie A. Putra</a>
+    <span class="page"><span>Creative technologist&nbsp;&middot;<span class="cs"> Case study&nbsp;&middot;</span> <a href="https://www.linkedin.com/in/geofrieazaryaputra/">LinkedIn</a></span></span>
+  </div>
+</header>
+
+<main id="main">
+<div class="wrap hero" id="top">
+  <div class="hero-head">
+    <h1><span class="ln">One dancer out</span> <span class="ln">of a moving shot.</span></h1>
+    <div class="hero-side">
+      <p class="lede">I built a tool that removes one person from a moving shot and keeps everyone else in it.</p>
+      <p class="links">
+        <a class="btn" href="#how">See how it works</a>
+        <a class="tlink" href="#numbers">What it cost</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="ba" aria-label="Before and after">
+    <div class="stage" id="ba" hidden>
+      <img src="assets/poster-compare.jpg" width="1600" height="900" alt="">
+      <canvas width="1920" height="1080" aria-hidden="true"></canvas>
+      <input type="range" id="ba-range" min="0" max="100" step="1" value="56" aria-label="Before and after divider. Left of the line is the source, right is the result.">
+      <span class="line"></span>
+      <span class="knob"><svg viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 1 1 7l6 6M19 1l6 6-6 6"/></svg></span>
+      <span class="tag before">Before</span><span class="tag after">After</span>
+    </div>
+    <noscript><div class="fallback"><video controls muted playsinline preload="metadata" poster="assets/poster-side.jpg" src="assets/compare-side.mp4" aria-label="Before and after, side by side: the source on the left, the result on the right"></video><p class="note">Left: the source. Right: the result.</p></div></noscript>
+    <div class="ba-foot">
+      <div class="ctrl" id="ba-ctrl" hidden>
+        <button type="button" class="ghost" id="ba-play" aria-pressed="false"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg><span>Play</span></button>
+        <span class="hint">Drag the line, or focus it and use the arrow keys.</span>
+      </div>
+      <div class="ba-text">
+        <p>In this stock clip the camera moves low across a waterfront plaza. The dancer in the middle is gone from every frame, the two beside her stay as they were shot, and the plaza, the wall, the river and the bridge are rebuilt where she was.</p>
+        <p class="note">Left of the line is the source, Pexels stock video 8714849. Right of it is the result, 1920&nbsp;&times;&nbsp;1080 at 25&nbsp;fps. Both halves play from one video file, so they stay frame for frame. The clip has no sound.</p>
+      </div>
+    </div>
+    <video id="ba-video" data-src="assets/compare.mp4" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></video>
+  </div>
+</div>
+
+<section id="how" aria-labelledby="h-how"><div class="wrap">
+  <h2 id="h-how">How it works</h2>
+  <div class="flow">
+    <ol class="steps">
+      <li><span><b>The brief.</b> One sentence: remove the dancer in the middle, keep the other two.</span></li>
+      <li><span><b>Mask.</b> SAM 3.1 tracks the dancer to remove in every frame, and the man beside her, who has to stay. The hole is her mask minus his.</span></li>
+      <li><span><b>Cut.</b> The shot goes in as two pieces of 243 frames that overlap by 29 frames. 243 frames is the longest run the model takes.</span></li>
+      <li><span><b>Fill.</b> The hole is painted flat grey. MiniMax H3 with the ReFrameVideo LoRA, which reads that grey as space to fill, paints it from a text description of what is behind her: "the sunlit concrete plaza with white painted lines, the low white stone wall and steps, and the river and the suspension bridge behind it". Each piece renders on H3's 1344&nbsp;&times;&nbsp;768 canvas on a rented GPU.</span></li>
+      <li><span><b>Check.</b> Each piece goes on a frame sheet, the source next to the output, and the join is checked frame by frame through the fade.</span></li>
+      <li><span><b>Join.</b> The second piece fades in over the first for 0.5&nbsp;s (12 frames) at frame 220, and the shot comes back out at 1920&nbsp;&times;&nbsp;1080 and 25&nbsp;fps.</span></li>
+    </ol>
+    <div class="figs">
+      <figure>
+        <img src="assets/mask-f80.jpg" width="640" height="342" alt="Frame 80 with the masks drawn over it: the crouching dancer in the middle covered in red and pink blocks, the man on the right in green with a yellow strip at his legs, the woman on the left untouched" loading="lazy">
+        <figcaption>SAM 3.1's masks on frame 80. Red is the hole H3 fills, pink the band it blends into the background, green the man it leaves alone, and yellow the strip of him beside the hole that it repaints too.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/check-f374.jpg" width="1680" height="454" alt="Two frames side by side under the bridge: the source with three dancers, and the output with only the woman on the left and the man on the right, the bridge tower and wall rebuilt between them" loading="lazy">
+        <figcaption>Piece 2's check sheet at frame 374: the source, then the output.</figcaption>
+      </figure>
+    </div>
+  </div>
+</div></section>
+
+<section id="numbers" aria-labelledby="h-numbers"><div class="wrap">
+  <h2 id="h-numbers">What the run measured</h2>
+  <p class="intro">The run used one NVIDIA RTX A6000 with 48&nbsp;GB, on a pod rented by the hour.</p>
+  <div class="nums">
+    <div><b>452 frames</b><span>the finished shot: 18.08&nbsp;s at 25&nbsp;fps, 1920&nbsp;&times;&nbsp;1080</span></div>
+    <div><b>2 &times; 243 frames</b><span>two pieces, overlapping by 29 frames, joined with one 0.5&nbsp;s fade</span></div>
+    <div><b>1344&nbsp;&times;&nbsp;768</b><span>H3's canvas for each piece</span></div>
+    <div><b>66 s and 33 s</b><span>SAM 3.1 masks for piece 1 and piece 2</span></div>
+    <div><b>941 s and 968 s</b><span>H3 fill for piece 1 and piece 2, 6 steps each</span></div>
+    <div><b>2,008 s</b><span>GPU time for the masks and the fill, 33.5 min</span></div>
+    <div class="total"><b>$0.24</b><span>GPU cost of the render: 33.5 min at $0.43 an hour</span></div>
+  </div>
+</div></section>
+
+<section id="closing" class="closing" aria-label="About this study"><div class="wrap">
+  <p class="nda">Client work is under NDA. I can walk you through it in an interview.</p>
+  <div class="small">
+    <p>This is a personal study, not client or commercial work. The source clip is Pexels stock video 8714849. MiniMax H3 with VoidEclipseAI's ReFrameVideo LoRA generates the background where the dancer was, and the masks come from Meta's SAM 3.1.</p>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap"><div class="close">
+  <span class="name">Geofrie A. Putra</span>
+  <p>Also: <a href="https://latent.zadkhamaya.xyz/talent-swap/">the talent-swap case study</a> &middot; <a href="https://latent.zadkhamaya.xyz/ad-versions/">the ad-versions case study</a> &middot; <a href="https://www.linkedin.com/in/geofrieazaryaputra/">LinkedIn</a></p>
+</div></div></footer>
+<script src="assets/compare.js"></script>
+</body>
+</html>
